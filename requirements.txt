@@ -10,3 +10,12 @@ pydantic-settings>=2.2,<3.0
 
 # Simple structured logging
 loguru>=0.7,<1.0
+
+# Numpy
+numpy>=1.26,<3.0
+
+# to run tests
+pytest>=8.2,<9.0
+httpx>=0.27,<1.0
+
+
