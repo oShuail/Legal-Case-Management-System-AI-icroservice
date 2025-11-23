@@ -1,26 +1,38 @@
+from typing import List
+
 from fastapi import APIRouter
-from app.core.embeddings import EmbeddingService
+
 from app.api.schemas.requests import SimilarityRequest
-from app.api.schemas.responses import SimilarityResponse, SimilarityItem
-import numpy as np
+from app.api.schemas.responses import SimilarityItem, SimilarityResponse
+from app.core.similarity import SimilarityService
 
 router = APIRouter(prefix="/similarity", tags=["similarity"])
 
+# Create a single service instance for this module.
+_similarity_service = SimilarityService()
+
+
 @router.post("/", response_model=SimilarityResponse)
-def semantic_search(req: SimilarityRequest):
-    svc = EmbeddingService()
-    q = svc.encode_batch(req.queries)     # shape: [Q, D]
-    d = svc.encode_batch(req.corpus)      # shape: [N, D]
+def compute_similarity(payload: SimilarityRequest) -> SimilarityResponse:
+    """
+    Compute semantic similarity between queries and corpus documents.
 
-    # cosine similarity: (QxD @ DxN) / (||Q|| * ||D||)
-    qn = q / (np.linalg.norm(q, axis=1, keepdims=True) + 1e-9)
-    dn = d / (np.linalg.norm(d, axis=1, keepdims=True) + 1e-9)
-    sims = qn @ dn.T  # [Q, N]
+    This endpoint is a thin wrapper around the core SimilarityService:
+    - It receives a validated SimilarityRequest (queries, corpus, top_k).
+    - Delegates the heavy lifting to SimilarityService.rank.
+    - Maps the raw (doc, score) tuples into Pydantic response models.
+    """
+    raw_results: List[List[tuple[str, float]]] = _similarity_service.rank(
+        queries=payload.queries,
+        corpus=payload.corpus,
+        top_k=payload.top_k,
+    )
 
-    results = []
-    for i in range(sims.shape[0]):
-        row = sims[i]
-        idxs = np.argsort(-row)[: req.top_k]  # top_k highest scores
-        results.append([SimilarityItem(doc=req.corpus[j], score=float(row[j])) for j in idxs])
+    api_results: List[List[SimilarityItem]] = []
+    for query_result in raw_results:
+        items = [
+            SimilarityItem(doc=doc_text, score=score) for doc_text, score in query_result
+        ]
+        api_results.append(items)
 
-    return SimilarityResponse(results=results)
+    return SimilarityResponse(results=api_results)
