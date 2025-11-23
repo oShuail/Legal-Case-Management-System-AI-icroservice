@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
         case_sensitive=False,
-        extra="ignore",  # ignore unknown keys in .env (e.g., leftover HOST/PORT)
+        extra="ignore",
     )
 
     # Basic app info

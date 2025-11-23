@@ -1,0 +1,30 @@
+# Python caches / tooling
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.cache/
+
+# Virtual envs
+.venv/
+env/
+ENV/
+
+# Local & OS files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Git & builds
+.git/
+.gitignore
+dist/
+build/
+
+# App data we don’t want inside the image
+models/
+.env
